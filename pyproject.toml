@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medical_triage"
+version = "1.0.0"
+description = "AI Medical Triage Assistant for Low-Resource Settings"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "openenv-core>=0.0.1",
+    "uvicorn>=0.20.0",
+    "fastapi>=0.100.0",
+]
+
+[tool.setuptools]
+py-modules = ["triage_env", "inference", "app"]

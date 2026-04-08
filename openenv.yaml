@@ -1,0 +1,21 @@
+name: "medical_triage"
+description: "AI Medical Triage Assistant for Low-Resource Settings"
+version: "1.0.0"
+
+entrypoint: "triage_env:MedicalTriageEnv"
+
+models:
+  observation: "triage_env:TriageObservation"
+  action: "triage_env:TriageAction"
+  reward: "triage_env:TriageReward"
+
+tasks:
+  direct_triage:
+    description: "All info is provided upfront. Classify the urgency of a patient's condition (Low, Medium, High) and recommend action."
+    difficulty: "easy"
+  investigative_triage:
+    description: "Agent receives only chief complaint and must dynamically 'investigate' to uncover vitals before triaging."
+    difficulty: "medium"
+  time_critical_triage:
+    description: "Handle a patient whose symptoms change over multiple steps if you investigate too long, demanding agile urgency shifts."
+    difficulty: "hard"

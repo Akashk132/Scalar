@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Triage Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dynamic-background">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+
+    <div class="glass-container global-wrapper">
+        <header class="header">
+            <div class="logo-box">
+                <span class="icon">🏥</span>
+                <h1>OpenEnv <span class="accent">Triage</span></h1>
+            </div>
+            <div class="task-selector">
+                <label for="taskSelect">Difficulty Mode:</label>
+                <select id="taskSelect" class="glass-input">
+                    <option value="direct_triage" selected>Tier 1: Direct Triage</option>
+                    <option value="investigative_triage">Tier 2: Investigative Triage</option>
+                    <option value="time_critical_triage">Tier 3: Time Critical Triage</option>
+                </select>
+                <button id="btnInit" class="btn primary glowing-btn">Initialize Patient</button>
+            </div>
+        </header>
+
+        <main class="dashboard hidden" id="dashboard">
+            <div class="left-panel">
+                <div class="patient-card glass-panel">
+                    <div class="card-header">
+                        <h2>Patient Profile <span id="patientId" class="badge">--</span></h2>
+                    </div>
+                    <div class="card-grid">
+                        <div class="stat-box">
+                            <span class="label">Age</span>
+                            <span class="value" id="pAge">--</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="label">Gender</span>
+                            <span class="value" id="pGender">--</span>
+                        </div>
+                        <div class="stat-box full-width">
+                            <span class="label">History</span>
+                            <span class="value" id="pHistory">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vitals-card glass-panel alert-zone">
+                    <h3>Vital Signs Matrix</h3>
+                    <div id="pVitals" class="vitals-display">Awaiting Telemetry...</div>
+                </div>
+
+                <div class="symptoms-card glass-panel">
+                    <h3>Current Trajectory (Step <span id="stepCounter">1</span>)</h3>
+                    <p id="pSymptoms" class="symptom-text">Loading symptoms...</p>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="action-card glass-panel" id="investigationCard" style="margin-bottom: 20px;">
+                    <h2>Investigation Tools</h2>
+                    <p class="instruction-text">Cost: -0.05 step penalty</p>
+                    <div class="form-group">
+                        <div class="btn-group" id="investigateGroup" style="display:flex; justify-content: space-between;">
+                            <button id="btnInvVitals" class="btn secondary glowing-btn" style="flex:1; margin-right: 10px;">Investigate Vitals</button>
+                            <button id="btnInvSymptoms" class="btn secondary glowing-btn" style="flex:1;">Investigate Symptoms</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-card glass-panel">
+                    <h2>AI Triage Protocol</h2>
+                    <p class="instruction-text" id="taskInstructions"></p>
+                    
+                    <div class="form-group">
+                        <label>Assessed Urgency Level</label>
+                        <div class="btn-group" id="urgencyGroup">
+                            <button class="toggle-btn" data-val="low">Low</button>
+                            <button class="toggle-btn" data-val="medium">Medium</button>
+                            <button class="toggle-btn" data-val="high">High</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="actionFormGroup">
+                        <label>Recommended Action</label>
+                        <div class="btn-group" id="actionGroup">
+                            <button class="toggle-btn" data-val="self_care">Self Care</button>
+                            <button class="toggle-btn" data-val="clinic_visit">Clinic Visit</button>
+                            <button class="toggle-btn" data-val="emergency_room">Emergency</button>
+                        </div>
+                    </div>
+
+                    <button id="btnSubmit" class="btn submit glowing-btn disabled">Execute Triage</button>
+                </div>
+
+                <div class="result-card glass-panel hidden" id="resultCard">
+                    <h2>Evaluation Core</h2>
+                    <div class="score-display">
+                        <div class="circular-progress">
+                            <span id="scoreValue">0.0</span>
+                        </div>
+                    </div>
+                    <p class="feedback-text" id="feedbackText"></p>
+                    <div class="truth-box hidden" id="truthBox">
+                        <p><strong>Ground Truth:</strong></p>
+                        <ul id="truthList"></ul>
+                    </div>
+                    <button id="btnNext" class="btn primary glowing-btn hidden">Next Step / Reset</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

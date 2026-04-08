@@ -14,4 +14,4 @@ COPY . .
 EXPOSE 7860
 
 # We use uvicorn to serve the environment
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]

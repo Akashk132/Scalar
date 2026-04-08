@@ -62,5 +62,8 @@ def read_root():
             return f.read()
     return "<h1>UI Not Found</h1><p>But API is running!</p>"
 
+def main():
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 7860)))
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    main()

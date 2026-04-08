@@ -135,12 +135,12 @@ class MedicalTriageEnv:
     def _clamp_score(self, score: float) -> float:
         """
         Guarantee that total task score is strictly between 0 and 1.
-        Maps 0.0 -> 0.1 and 1.0 -> 0.8.
-        Max possible sum (4 steps): 3 * 0.005 + 0.8 = 0.815 (Safe!)
-        Min possible sum: 0.1 (Safe!)
+        Maps 0.0 -> 0.15 and 1.0 -> 0.85.
+        Max possible sum (4 steps): 3 * 0.001 + 0.85 = 0.853 (Safe!)
+        Min possible sum: 0.15 (Safe!)
         """
-        scaled = (score * 0.7) + 0.1
-        return round(scaled, 3)
+        scaled = (score * 0.7) + 0.15
+        return round(scaled, 4)
 
     def step(self, action: TriageAction) -> tuple[TriageObservation, TriageReward, bool, dict]:
         self.step_number += 1
@@ -154,7 +154,8 @@ class MedicalTriageEnv:
         if action.action_type == "investigate":
             if self.step_number >= self.max_steps:
                 done = True
-                return self._get_observation(), TriageReward(score=0.005, feedback="Max steps reached without triage. Patient walked out or crashed."), done, {}
+                final_r = self._clamp_score(0.0)
+                return self._get_observation(), TriageReward(score=final_r, feedback="Max steps reached without triage."), done, {"reward": final_r}
                 
             self.penalty_accumulated += 0.05
             
@@ -178,8 +179,9 @@ class MedicalTriageEnv:
                     self.current_case["true_urgency"] = true_u
                     self.current_case["true_action"] = true_a
                     feedback += " PATIENT CONDITION DETERIORATED!"
-                    
-            return self._get_observation(), TriageReward(score=0.005, feedback=feedback), False, {}
+            
+            final_r = 0.001 # Extremely small positive to keep the SUM low
+            return self._get_observation(), TriageReward(score=final_r, feedback=feedback), False, {"reward": final_r}
             
         elif action.action_type == "triage":
             done = True
@@ -207,12 +209,14 @@ class MedicalTriageEnv:
             if self.task_name in ["investigative_triage", "time_critical_triage"]:
                 if self.discovered_vitals == "Unknown" and self.discovered_symptoms == "Unknown":
                     final_score = 0.0
-                    feedback = "FATAL: Triaged blindly without ANY investigation!"
+                    feedback = "FATAL: Triaged blindly!"
 
-            return self._get_observation(), TriageReward(score=self._clamp_score(final_score), feedback=feedback), done, {"true_urgency": true_u, "true_action": true_a}
+            clamped_r = self._clamp_score(final_score)
+            return self._get_observation(), TriageReward(score=clamped_r, feedback=feedback), done, {"true_urgency": true_u, "true_action": true_a, "reward": clamped_r}
             
         else:
-            return self._get_observation(), TriageReward(score=0.005, feedback="Invalid action type"), True, {}
+            final_r = self._clamp_score(0.0)
+            return self._get_observation(), TriageReward(score=final_r, feedback="Invalid action type"), True, {"reward": final_r}
 
     def close(self):
         pass

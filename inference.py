@@ -3,7 +3,10 @@ import json
 from openai import OpenAI
 from triage_env import MedicalTriageEnv, TriageAction
 
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "mock_key"
+HF_TOKEN = os.getenv("HF_TOKEN")
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
+API_KEY = HF_TOKEN
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-turbo")
 TASK_NAME = os.getenv("MEDICAL_TRIAGE_TASK", "classify_urgency") # Fallback to first task
@@ -116,7 +119,7 @@ def main():
         # 4. Print END line
         success = "true" if max(rewards + [0]) > 0.0 else "false" # simple proxy
         rewards_str = ",".join([f"{r:.2f}" for r in rewards])
-        print(f"[END] success={success} steps={step_num} score={total_score:.2f} rewards={rewards_str}")
+        print(f"[END] success={success} steps={step_num} rewards={rewards_str}")
 
 if __name__ == "__main__":
     # If run in validation mode without args, we should run all 3 tasks to ensure it reproduces scores?

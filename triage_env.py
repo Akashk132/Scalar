@@ -133,8 +133,14 @@ class MedicalTriageEnv:
         )
 
     def _clamp_score(self, score: float) -> float:
-        """Ensure score is strictly between 0 and 1 (OpenEnv Phase 2 Requirement)."""
-        return max(0.01, min(0.99, score))
+        """
+        Guarantee that total task score is strictly between 0 and 1.
+        Maps 0.0 -> 0.1 and 1.0 -> 0.8.
+        Max possible sum (4 steps): 3 * 0.005 + 0.8 = 0.815 (Safe!)
+        Min possible sum: 0.1 (Safe!)
+        """
+        scaled = (score * 0.7) + 0.1
+        return round(scaled, 3)
 
     def step(self, action: TriageAction) -> tuple[TriageObservation, TriageReward, bool, dict]:
         self.step_number += 1
@@ -148,7 +154,7 @@ class MedicalTriageEnv:
         if action.action_type == "investigate":
             if self.step_number >= self.max_steps:
                 done = True
-                return self._get_observation(), TriageReward(score=0.01, feedback="Max steps reached without triage. Patient walked out or crashed."), done, {}
+                return self._get_observation(), TriageReward(score=0.005, feedback="Max steps reached without triage. Patient walked out or crashed."), done, {}
                 
             self.penalty_accumulated += 0.05
             
@@ -173,7 +179,7 @@ class MedicalTriageEnv:
                     self.current_case["true_action"] = true_a
                     feedback += " PATIENT CONDITION DETERIORATED!"
                     
-            return self._get_observation(), TriageReward(score=0.01, feedback=feedback), False, {}
+            return self._get_observation(), TriageReward(score=0.005, feedback=feedback), False, {}
             
         elif action.action_type == "triage":
             done = True
@@ -206,7 +212,7 @@ class MedicalTriageEnv:
             return self._get_observation(), TriageReward(score=self._clamp_score(final_score), feedback=feedback), done, {"true_urgency": true_u, "true_action": true_a}
             
         else:
-            return self._get_observation(), TriageReward(score=0.01, feedback="Invalid action type"), True, {}
+            return self._get_observation(), TriageReward(score=0.005, feedback="Invalid action type"), True, {}
 
     def close(self):
         pass

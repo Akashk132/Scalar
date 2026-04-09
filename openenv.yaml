@@ -13,9 +13,15 @@ tasks:
   direct_triage:
     description: "All info is provided upfront. Classify the urgency of a patient's condition (Low, Medium, High) and recommend action."
     difficulty: "easy"
+    kwargs:
+      task_name: "direct_triage"
   investigative_triage:
     description: "Agent receives only chief complaint and must dynamically 'investigate' to uncover vitals before triaging."
     difficulty: "medium"
+    kwargs:
+      task_name: "investigative_triage"
   time_critical_triage:
     description: "Handle a patient whose symptoms change over multiple steps if you investigate too long, demanding agile urgency shifts."
     difficulty: "hard"
+    kwargs:
+      task_name: "time_critical_triage"

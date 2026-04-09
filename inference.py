@@ -11,7 +11,8 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-turbo")
 # STRICT COMPLIANCE: Default to direct_triage if no env var is provided.
 # NEVER run multiple tasks in one execution for the validator.
-TASK_NAME = os.getenv("MEDICAL_TRIAGE_TASK", "direct_triage")
+# SUPPORT MULTIPLE ENV VARS FOR TASK SELECTION
+TASK_NAME = os.getenv("MEDICAL_TRIAGE_TASK") or os.getenv("TASK_ID") or os.getenv("TASK_NAME") or "direct_triage"
 BENCHMARK = "medical_triage"
 
 def serialize_action(action: TriageAction) -> str:

@@ -207,7 +207,7 @@ class MedicalTriageEnv:
                     feedback = "FATAL: Triaged blindly!"
 
             clamped_r = self._clamp_score(final_score)
-            return self._get_observation(), TriageReward(score=clamped_r, reward=clamped_r, feedback=feedback), done, {"reward": clamped_r, "score": clamped_r}
+            return self._get_observation(), TriageReward(score=clamped_r, reward=clamped_r, feedback=feedback), done, {"true_urgency": true_u, "true_action": true_a, "reward": clamped_r, "score": clamped_r}
             
         else:
             final_r = self._clamp_score(0.0)

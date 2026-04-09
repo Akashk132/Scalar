@@ -32,6 +32,7 @@ class TriageAction(BaseModel):
 
 class TriageReward(BaseModel):
     score: float = Field(description="A score between 0.0 and 1.0 representing the quality of the action.")
+    reward: float = Field(description="Alias for score, between 0.0 and 1.0.")
     feedback: str = Field(description="Textual feedback explaining the score.")
 
 # --- Complex Case Datasets ---
@@ -155,7 +156,7 @@ class MedicalTriageEnv:
             if self.step_number >= self.max_steps:
                 done = True
                 final_r = self._clamp_score(0.0)
-                return self._get_observation(), TriageReward(score=final_r, feedback="Max steps reached without triage."), done, {"reward": final_r}
+                return self._get_observation(), TriageReward(score=final_r, reward=final_r, feedback="Max steps reached without triage."), done, {"reward": final_r, "score": final_r}
                 
             self.penalty_accumulated += 0.05
             
@@ -181,7 +182,7 @@ class MedicalTriageEnv:
                     feedback += " PATIENT CONDITION DETERIORATED!"
             
             final_r = 0.001 # Extremely small positive to keep the SUM low
-            return self._get_observation(), TriageReward(score=final_r, feedback=feedback), False, {"reward": final_r}
+            return self._get_observation(), TriageReward(score=final_r, reward=final_r, feedback=feedback), False, {"reward": final_r, "score": final_r}
             
         elif action.action_type == "triage":
             done = True
@@ -212,11 +213,28 @@ class MedicalTriageEnv:
                     feedback = "FATAL: Triaged blindly!"
 
             clamped_r = self._clamp_score(final_score)
-            return self._get_observation(), TriageReward(score=clamped_r, feedback=feedback), done, {"true_urgency": true_u, "true_action": true_a, "reward": clamped_r}
+            return self._get_observation(), TriageReward(score=clamped_r, reward=clamped_r, feedback=feedback), done, {"true_urgency": true_u, "true_action": true_a, "reward": clamped_r, "score": clamped_r}
             
         else:
             final_r = self._clamp_score(0.0)
-            return self._get_observation(), TriageReward(score=final_r, feedback="Invalid action type"), True, {"reward": final_r}
+            return self._get_observation(), TriageReward(score=final_r, reward=final_r, feedback="Invalid action type"), True, {"reward": final_r, "score": final_r}
+
+    @staticmethod
+    def grade(submission_output: str) -> float:
+        """Used by some OpenEnv validators to extract final score from stdout logs."""
+        try:
+            lines = submission_output.split('\n')
+            for line in reversed(lines):
+                if '[END]' in line and 'rewards=' in line:
+                    rewards_part = line.split('rewards=')[1]
+                    rewards = [float(r) for r in rewards_part.split(',') if r]
+                    if rewards:
+                        avg = sum(rewards) / len(rewards)
+                        # Maps to the same safe range 0.15 - 0.85
+                        return max(0.15, min(0.85, avg))
+            return 0.15
+        except Exception:
+            return 0.15
 
     def close(self):
         pass

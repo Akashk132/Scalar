@@ -1,5 +1,5 @@
 name: "medical_triage"
-description: "AI Medical Triage Assistant for Low-Resource Settings"
+description: "AI Medical Triage Assistant — RL environment for sequential patient investigation and triaging under partial observability"
 version: "1.0.0"
 
 entrypoint: "triage_env:MedicalTriageEnv"
@@ -11,20 +11,22 @@ models:
 
 tasks:
   direct_triage:
-    description: "All info upfront triage."
+    description: "Easy — Full patient information is provided upfront. The agent must classify urgency and recommend an action."
     difficulty: "easy"
-    grader: "grader:evaluate_performance"
+    grader: "grader:grade_direct_triage"
     kwargs:
       task_name: "direct_triage"
+
   investigative_triage:
-    description: "Chief complaint only investigation."
+    description: "Medium — Only the chief complaint is visible. The agent must investigate symptoms and vitals (with time penalties) before making a triage decision."
     difficulty: "medium"
-    grader: "grader:evaluate_performance"
+    grader: "grader:grade_investigative_triage"
     kwargs:
       task_name: "investigative_triage"
+
   time_critical_triage:
-    description: "Time Deterioration challenge."
+    description: "Hard — Patients are volatile and may deteriorate. The agent must balance speed vs. information gathering under time pressure."
     difficulty: "hard"
-    grader: "grader:evaluate_performance"
+    grader: "grader:grade_time_critical_triage"
     kwargs:
       task_name: "time_critical_triage"

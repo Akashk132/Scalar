@@ -7,53 +7,112 @@ sdk: docker
 app_port: 7860
 ---
 
-# AI Medical Triage Assistant (OpenEnv) - RL Sequential Investigation Edition
+# 🏥 AI Medical Triage Assistant — OpenEnv RL Environment
 
-## Real-world Motivation & Social Impact 
-In many low-resource rural area settings in India, there is a severe shortage of doctors. Patients often travel long distances only to find out they could have managed their symptoms at home, or conversely, underestimate critical conditions until it is too late.
+## Real-World Motivation
 
-This OpenEnv simulates a first-level AI triage assistant. However, it is not a basic text classifier. It functions as a true **Sequential Decision-Making RL Environment**. The AI agent must explore partial observability, budget its actions to investigate symptoms, and manage the risk of time deterioration.
+In low-resource healthcare settings worldwide, patients face critical delays in receiving appropriate care. This OpenEnv simulates a **first-level AI triage assistant** that must make sequential decisions under partial observability — a genuine real-world problem.
 
-## Action & Observation Spaces
-### Observation (Pydantic: `TriageObservation`)
-- **`patient_id`**, **`age`** & **`gender`**: Basic demographics.
-- **`medical_history`**: Pre-existing conditions.
-- **`chief_complaint`**: The initial vague reason the patient walked in.
-- **`discovered_symptoms`**: Blank at first. Must be uncovered by the agent.
-- **`discovered_vitals`**: Blank at first. Must be uncovered by the agent.
-- **`step_number`**: Current interaction step.
-- **`task_instructions`**: Guide for the LLM on exactly what is required for the current task tier.
+Unlike simple classifiers, this is a **true sequential decision-making RL environment** where the agent must:
+- Decide what information to gather (at a cost)
+- Balance investigation thoroughness vs. time pressure
+- Handle patients who deteriorate if not triaged quickly
 
-### Action (Pydantic: `TriageAction`)
-- **`action_type`**: Literal `["investigate", "triage"]`.
-- **`investigation_target`**: `["symptoms", "vitals"]` (used if investigating).
-- **`urgency_level`**: Literal `["low", "medium", "high"]` (used if triaging).
-- **`recommended_action`**: Literal `["self_care", "clinic_visit", "emergency_room"]` (used if triaging).
-- **`reasoning`**: Brief justification.
+---
 
-## Tasks and Difficulty
-1. **`direct_triage` (Easy)**: The agent has full observability immediately. It must simply map the problem state to the urgency directly.
-2. **`investigative_triage` (Medium)**: The agent is presented with a vague chief complaint. It must spend `investigate` actions to retrieve vitals and symptoms. Each action adds a penalty (`-0.05`) simulating time passing. Guessing blindly gets heavily penalized.
-3. **`time_critical_triage` (Hard)**: The agent operates under strict time constraints. Taking too many steps causes "Volatile" patients to deteriorate physically (dropping vitals, worsening true-urgency). The AI must identify high-risk patients efficiently and escalate quickly.
+## Observation Space (`TriageObservation`)
 
-## Setup Instructions
+| Field | Type | Description |
+|-------|------|-------------|
+| `patient_id` | `str` | Unique patient identifier |
+| `age` | `int` | Patient age |
+| `gender` | `str` | Patient gender |
+| `medical_history` | `str` | Pre-existing conditions |
+| `chief_complaint` | `str` | Initial reason for visit |
+| `discovered_symptoms` | `str` | Symptoms uncovered through investigation |
+| `discovered_vitals` | `str` | Vital signs uncovered through investigation |
+| `step_number` | `int` | Current step (1-indexed) |
+| `max_steps` | `int` | Maximum steps allowed |
+| `task_instructions` | `str` | Task-specific instructions |
+
+## Action Space (`TriageAction`)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action_type` | `"investigate" \| "triage"` | Choose to gather info or make final decision |
+| `investigation_target` | `"symptoms" \| "vitals"` | What to investigate (if investigating) |
+| `urgency_level` | `"low" \| "medium" \| "high"` | Urgency classification (if triaging) |
+| `recommended_action` | `"self_care" \| "clinic_visit" \| "emergency_room"` | Care recommendation (if triaging) |
+| `reasoning` | `str` | Brief justification |
+
+## Reward Design
+
+- **Urgency match**: up to 0.45 points (partial credit for being 1 level off)
+- **Action match**: up to 0.45 points (partial credit for adjacent actions)
+- **Investigation bonus**: +0.05 for thorough information gathering
+- **Time penalty**: -0.06 per investigation step (-0.10 in time-critical)
+- **Deterioration penalty**: -0.10 if volatile patient worsens
+- **All scores clamped to strict (0.01, 0.99)** — never 0.0 or 1.0
+
+---
+
+## Tasks & Difficulty
+
+### 1. `direct_triage` — Easy
+Full patient information (symptoms + vitals) is visible from the start. The agent simply needs to classify urgency and recommend an action.
+
+### 2. `investigative_triage` — Medium
+Only the chief complaint is visible. The agent must spend `investigate` actions to uncover symptoms and vitals. Each investigation incurs a time penalty (-0.06). Blind guessing is penalized.
+
+### 3. `time_critical_triage` — Hard
+High-volatility patients deteriorate over time. Investigation costs more (-0.10 per step). If the agent takes too long, the patient's condition worsens, potentially changing the correct answer. The agent must triage quickly while still gathering minimum critical info.
+
+---
+
+## Setup & Usage
+
+### Docker (recommended)
 ```bash
-# Clone repo and start container
 docker build -t openenv-triage .
 docker run -p 7860:7860 openenv-triage
 ```
-Access the environment API locally via `http://localhost:7860/`.
+Access the API at `http://localhost:7860/`
 
-## Baseline Inference
-Run the baseline inference script providing an OpenAI compatible key:
+### API Endpoints
+- `GET /` — Health check (returns 200)
+- `GET/POST /reset?task_name=direct_triage&case_index=0` — Reset environment
+- `POST /step` — Submit an action (JSON body matching `TriageAction`)
+- `GET /state` — Get current environment state
+
+### Run Inference
 ```bash
-export API_KEY="your_api_key_here"
-export MODEL_NAME="gpt-4"
-export MEDICAL_TRIAGE_TASK="investigative_triage"
+export HF_TOKEN="your_api_key"
+export MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
 python inference.py
 ```
 
-Expected Baseline Scores (GPT-4-turbo mock test):
-- `direct_triage`: ~ 1.00
-- `investigative_triage`: ~ 0.90
-- `time_critical_triage`: ~ 0.85
+### Run a specific task
+```bash
+export TASK_NAME="investigative_triage"
+python inference.py
+```
+
+---
+
+## Baseline Scores (Heuristic Agent)
+
+| Task | Avg Score | Description |
+|------|-----------|-------------|
+| `direct_triage` | ~0.55 | Medium accuracy with keyword heuristic |
+| `investigative_triage` | ~0.40 | Investigate-then-guess strategy |
+| `time_critical_triage` | ~0.35 | Fast triage with partial info |
+
+*Scores improve significantly with capable LLMs (GPT-4, Qwen-72B).*
+
+---
+
+## Grader Verification
+```bash
+python grader.py
+```
+All scores will be printed and verified to be in the strict (0.0, 1.0) range.
